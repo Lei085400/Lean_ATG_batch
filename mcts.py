@@ -35,7 +35,8 @@ from Lean4Gym import *
 import traceback
 # TACRIC_NUMBER = 8
 MAX_ROUND_NUMBER = 10
-os.environ["CUDA_VISIBLE_DEVICES"] = "2" 
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0" 
+
 model_name_or_path = "/home2/wanglei/Project/model/pythia2.8b_choose"
 
 model = vllm.LLM(
@@ -96,6 +97,8 @@ def generate_vllm(prompt, model, tokenizer, temperatures, num_samples, stop, max
 
 def encode_state(state, feature_size):
     # state = str([str(sublist) for sublist in state])
+    if(state is None):
+        state = "None"
     encode_state = [ord(char) for char in state]
     if(len(encode_state)<=feature_size):
         encode_state += [0]*(feature_size-len(encode_state))  #list
@@ -136,7 +139,7 @@ def tactic_generator(state):
 
   state = state.getTacticState()
   tactic_candidates, scores = generate_vllm(_prompt_proofstep(state), model, tokenizer, 
-                              temperatures=[0], num_samples=16, stop=tokenizer.eos_token)
+                              temperatures=[0], num_samples=8, stop=tokenizer.eos_token)
       
   return tactic_candidates
 
@@ -228,8 +231,11 @@ class Node(object):
         return 0
   
   def proof(self,state,tac,lean):
+    try:
       result = lean.run_tactic(state, [tac])
-      return result
+    except:
+      return state
+    return result
 
   def get_next_state_with_random_choice(self, lean, index):  ############# 根据当前state输入大模型，获取策略list后，随机选择其中一个策略，返回执行该随机策略后的状态
     # if(self.state==[]):
@@ -403,23 +409,21 @@ class MCTS:
 
     def run(self, lean):
       node =  self.node
-      computation_budget = 50
+      computation_budget = 1000
       
       # Run as much as possible under the computation budget
       for i in range(computation_budget):
 
         # 1. Find the best node to expand
         # print("mcts到第{}次，node为：{}".format(i,node.state))
-        # print("让我看看是不是tree policy害我死循环")
         expand_node = self.tree_policy(node, lean, True)
-        # print("不是tree policy害我死循环")
         
         if(expand_node.llmflag == False):
           return node
         ############################################
         if(not expand_node.flag):
           reward = -1
-        elif(expand_node.new):
+        elif(expand_node.state.isFinish()):
           reward = 1
         else:
           encodestate = encode_state(expand_node.state.getTacticState(), self.args['feature_size'])
@@ -429,6 +433,9 @@ class MCTS:
         # 3. Update all passing nodes with reward
         self.backup(expand_node, reward)
         
+        if(expand_node.state.isFinish()):
+          return node
+
       return node
 
 
@@ -456,43 +463,25 @@ class MCTS:
           encodestate = encode_state(expand_node.state.getTacticState(), self.args['feature_size'])
           input_value = torch.FloatTensor(np.array(encodestate).astype(np.float64)).to(self.device)
           reward = float(self.value_model(input_value))
+        
 
         # 3. Update all passing nodes with reward
         self.backup(expand_node, reward)
 
         if(expand_node.new): #生成了新定理, 填补证明步骤
-          # name = "new" + str(i)
-          # path = []  #新定理所用策略
-          # unused_list = expand_node.state[:-1]
           
-          # new_node = copy.copy(expand_node)
-          # trans_assertion,trans_proof = assertion_proof_trans_to_same_v(mm,expand_node.assersion,path,symbol_dict)
-          
-          # if is_right_order(trans_assertion,symbol_dict):
-          #   while new_node.parent is not None:
-          #     if(new_node.state == unused_list):
-          #       break
-          #     path.append(new_node.tac)
-          #     new_node = new_node.parent
-          #   path.reverse()
-            
-          #   trans_assertion,trans_proof = assertion_proof_trans_to_same_v(mm,expand_node.assersion,path,symbol_dict)
-          #   expand_node.path = trans_proof
-          #   expand_node.assersion = trans_assertion
-          #   # assersions = add_new_assertion_to_assertions(trans_assertion,assersions,symbol_dict)
-          
-            new_theorems = generate_theorem(expand_node)
-            # print('new_theorem:',new_theorem)
+          new_theorems = generate_theorem(expand_node)
+          # print('new_theorem:',new_theorem)
 
-            outputs.append(new_theorems)
+          outputs.append(new_theorems)
 
-            with open('out.json', 'a') as file:
-              json.dump(new_theorems, file)
-              file.write('\n')                      
-            count += 1
-            
-            if(count>=self.args['max_count']):
-              break
+          with open('out.json', 'a') as file:
+            json.dump(new_theorems, file)
+            file.write('\n')                      
+          count += 1
+          
+          if(count>=self.args['max_count']):
+            break
 
       return outputs
 

@@ -39,7 +39,8 @@ args = {
     'epochs': 10,                                    # Number of epochs of training per iteration
     'checkpoint_path': 'latest.pth',                 # location to save latest set of weights
     'TACRIC_NUMBER': 8,
-    'feature_size':100
+    'feature_size':100,
+    'max_count': 100
     # 'MAX_ROUND_NUMBER' : 10
 }
 
@@ -57,10 +58,10 @@ valueModel = value_model(feature_size, device).to(device)
 print("hello,开始了！！")
 
 
-checkpoint_policy = torch.load("/home/wanglei/AAAI/lean_ATG/leanproject/ATG/policy_model")
+checkpoint_policy = torch.load("policy_model")
 policyModel.load_state_dict(checkpoint_policy['state_dict'])
 
-checkpoint_value = torch.load("/home/wanglei/AAAI/lean_ATG/leanproject/ATG/value_model")
+checkpoint_value = torch.load("value_model")
 valueModel.load_state_dict(checkpoint_value['state_dict'])
 
 def list_files(directory):
@@ -74,17 +75,25 @@ def list_files(directory):
 count = 0
 new_theorems = []
 
-#待证明策略：
-lean_dir = "/home/wanglei/AAAI/lean_ATG/leanproject/testfolder/succ"
-# lean_dir = "/home2/wanglei/Project/testfolder"
-file_list = list_files(lean_dir)
-# print(len(file_list))
+file_list = []
+with open('example_generate.txt', 'r') as file: 
+    lines = file.readlines() 
+    for line in lines:
+        line = ''.join(line).strip('\n')
+        file_list.append(line)
+        print(line)
 
-lean_workdir = "/home/wanglei/AAAI/lean_ATG/leanproject" # Lean工程的根目录
+# #待证明策略：
+# lean_dir = "/home2/wanglei/Project/testfolder/succ"
+# # lean_dir = "/home2/wanglei/Project/testfolder"
+# file_list = list_files(lean_dir)
+# # print(len(file_list))
+
+lean_workdir = "/home2/wanglei/Project" # Lean工程的根目录
 
 for i, file in enumerate(file_list):
     print("============================================")
-    lean_file = "testfolder/succ/" + file  # 待证明定理的Lean文件
+    lean_file = "testfolder/lean_theorems_with_options_valid/" + file  # 待证明定理的Lean文件
    
     print("证明定理为:{}".format(file))
     lean = Lean4Gym(lean_workdir, lean_file)
@@ -106,7 +115,7 @@ for i, file in enumerate(file_list):
     
 print("新定理总数：{}".format(str(len(new_theorems))))
 
-F = open(r'/home/wanglei/AAAI/lean_ATG/leanproject/ATG/new_theorems.txt','w')
+F = open(r'new_theorems.txt','w')
 for theorem in new_theorems:
     F.write(theorem +'\n')
 F.close() 

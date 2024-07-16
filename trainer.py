@@ -64,11 +64,6 @@ class Trainer:
             for index, children_node in enumerate(node.children):
                 action_probs[index] = children_node.visit_times  
                 
-                if(children_node.flag == False):
-                    action_probs[index] = 0
-                if(children_node.new == True):
-                    action_probs[index] = 1
-                    
                 if(action_probs[index] > max_times): # 找到当前节点中概率最大(访问次数最多)的子节点
                     max_times = action_probs[index]
                     max_i = index
@@ -76,6 +71,13 @@ class Trainer:
             # print(action_probs)
             if(np.sum(action_probs)!=0):
                 action_probs = action_probs / np.sum(action_probs)  #计算每个节点的概率值，当前节点node暂时没有子节点时，即[0,0,0,0]时，会报错
+
+            if(children_node.flag == False):
+                action_probs[index] = 0
+            if(children_node.new == True):
+                action_probs[index] = 1
+                max_i = index
+                max_times = 1
 
             encodestate = encode_state(state.getTacticState(), self.args['feature_size'])
             
