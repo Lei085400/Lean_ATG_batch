@@ -147,8 +147,14 @@ def generate_theorem(node):
   return node.state.tacticState
  
 #判断是否为新定理
-def new_theorem(node):
-  return node.flag
+def new_theorem(node, outputs):
+  state = node.state.tacticState
+  if(state == "no goals"):
+    return False
+  for i in outputs:
+    if i == state:
+      return False     
+  return True
 
 class Node(object):
   """
@@ -285,7 +291,7 @@ class MCTS:
         self.args = args
         self.device = device
 
-    def tree_policy(self, node, lean, is_exploration):
+    def tree_policy(self, node, lean, is_exploration, outputs):
       """
       蒙特卡罗树搜索的Selection和Expansion阶段，传入当前需要开始搜索的节点（例如根节点），根据exploration/exploitation算法返回最好的需要expend的节点，注意如果节点是叶子结点直接返回。
 
@@ -314,14 +320,14 @@ class MCTS:
             
         else:
           # Return the new sub node
-          sub_node = self.expand(node,lean)
+          sub_node = self.expand(node,lean, outputs)
           return sub_node
 
       # Return the leaf node
       return node
 
 
-    def expand(self, node, lean):
+    def expand(self, node, lean, outputs):
       """
       输入一个节点，在该节点上拓展一个新的节点，使用random方法执行Action，返回新增的节点。注意，需要保证新增的节点与其他节点Action不同。
       """
@@ -351,7 +357,7 @@ class MCTS:
       if(new_node.flag == False):
         new_node.new = False
       else:
-        if(new_theorem(new_node)):
+        if(new_theorem(new_node, outputs)):
           new_node.new = True
         else:
           new_node.new = False
@@ -410,20 +416,26 @@ class MCTS:
     def run(self, lean):
       node =  self.node
       computation_budget = 1000
-      
+      time_out = 120
+      outputs = []
+      start = time.time()
       # Run as much as possible under the computation budget
       for i in range(computation_budget):
-
+        current_time = time.time()
+        if current_time - start > time_out:
+          return node
         # 1. Find the best node to expand
         # print("mcts到第{}次，node为：{}".format(i,node.state))
-        expand_node = self.tree_policy(node, lean, True)
+        expand_node = self.tree_policy(node, lean, True, outputs)
         
         if(expand_node.llmflag == False):
           return node
         ############################################
         if(not expand_node.flag):
           reward = -1
-        elif(expand_node.state.isFinish()):
+        # elif(expand_node.state.isFinish()):
+        #   reward = 1
+        elif(expand_node.new == True):
           reward = 1
         else:
           encodestate = encode_state(expand_node.state.getTacticState(), self.args['feature_size'])
@@ -435,6 +447,10 @@ class MCTS:
         
         if(expand_node.state.isFinish()):
           return node
+        
+        if(expand_node.new): #生成了新定理, 放入outputs
+          new_theorems = expand_node.state.tacticState
+          outputs.append(new_theorems)
 
       return node
 
@@ -443,15 +459,17 @@ class MCTS:
       count = 0
       node =  self.node
       computation_budget = 1000000
-      
+      start = time.time()
       outputs = []
       
       # Run as much as possible under the computation budget
-      for i in range(computation_budget):
-
+      for i in trange(computation_budget):
+        current_time = time.time()
+        if current_time - start > time_out:
+          return outputs
         # 1. Find the best node to expand
         # print("mcts到第{}次，node为：{}".format(i,node.state))
-        expand_node = self.tree_policy(node, lean, True)
+        expand_node = self.tree_policy(node, lean, True, outputs)
         if(expand_node.llmflag == False):
           return outputs
         ############################################
@@ -472,7 +490,8 @@ class MCTS:
           
           new_theorems = generate_theorem(expand_node)
           # print('new_theorem:',new_theorem)
-
+          
+          new_theorems = expand_node.state.tacticState
           outputs.append(new_theorems)
 
           with open('out.json', 'a') as file:

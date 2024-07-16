@@ -49,7 +49,7 @@ state_list = []
 lean_list = []
 
 feature_size = args['feature_size']  # 特征向量的size
-time_out = 120
+time_out = 180
 
 
 device_ids = list(range(torch.cuda.device_count()))  
