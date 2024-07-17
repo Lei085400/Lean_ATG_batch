@@ -2,16 +2,79 @@ import Lean4Repl
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Finset.LocallyFinite
+import Mathlib.Algebra.Algebra.Basic
+import Mathlib.Algebra.Order.Floor
+import Mathlib.Algebra.Associated
+import Mathlib.Algebra.BigOperators.Basic
+import Mathlib.Algebra.BigOperators.Order
+import Mathlib.Algebra.BigOperators.Pi
+import Mathlib.Algebra.GeomSum
+import Mathlib.Algebra.Group.Basic
+import Mathlib.Algebra.Group.Commute.Basic
+import Mathlib.Algebra.Group.Defs
+import Mathlib.Algebra.GroupPower.Basic
+import Mathlib.Algebra.GroupPower.Identities
+import Mathlib.Algebra.Order.Floor
+import Mathlib.Algebra.QuadraticDiscriminant
+import Mathlib.Algebra.Ring.Basic
+import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
+import Mathlib.Analysis.NormedSpace.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.Base
+import Mathlib.Combinatorics.SimpleGraph.Basic
+import Mathlib.Data.Complex.Basic
+import Mathlib.Data.Complex.Exponential
+import Mathlib.Data.Finset.Basic
+import Mathlib.Data.Fintype.Card
+import Mathlib.Data.Int.Basic
+import Mathlib.Data.Int.GCD
+import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.Parity
+import Mathlib.Data.List.Intervals
+import Mathlib.Data.List.Palindrome
+import Mathlib.Data.Multiset.Basic
+import Mathlib.Data.Nat.Basic
+import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Data.Nat.Digits
+import Mathlib.Data.Nat.Factorial.Basic
+import Mathlib.Data.Nat.ModEq
+import Mathlib.Data.Nat.Multiplicity
+import Mathlib.Data.Nat.Parity
+import Mathlib.Data.Nat.Prime
+import Mathlib.Data.PNat.Basic
+import Mathlib.Data.PNat.Prime
+import Mathlib.Data.Polynomial.Basic
+import Mathlib.Data.Polynomial.Eval
+import Mathlib.Data.Real.Basic
+import Mathlib.Data.Real.Irrational
+import Mathlib.Data.Real.NNReal
+import Mathlib.Data.Real.Sqrt
+import Mathlib.Data.Set.Finite
+import Mathlib.Data.Sym.Sym2
+import Mathlib.Data.ZMod.Basic
+import Mathlib.Dynamics.FixedPoints.Basic
+import Mathlib.LinearAlgebra.AffineSpace.AffineMap
+import Mathlib.LinearAlgebra.AffineSpace.Independent
+import Mathlib.LinearAlgebra.AffineSpace.Ordered
+import Mathlib.LinearAlgebra.FiniteDimensional
+import Mathlib.Logic.Equiv.Basic
+import Mathlib.Order.Filter.Basic
+import Mathlib.Order.LocallyFinite
+import Mathlib.Order.WellFounded
+import Mathlib.Topology.Basic
+import Mathlib.Topology.Instances.NNReal
+import Aesop
+-- import Mathlib.Algebra.Group.Pi.Basic
+-- set_option maxHeartbeats 0
+set_option trace.aesop true
+set_option trace.aesop.proof true
+set_option maxHeartbeats 999999999999999999999999
+open Nat Real Rat BigOperators
 
 
 #align_import data.nat.choose.sum from "leanprover-community/mathlib"@"4c19a16e4b705bf135cf9a80ac18fcc99c438514"
 
-open Nat
-open Finset
 
-open BigOperators
-
-set_option maxHeartbeats 999999999999999999999999
 
 -- theorem idt1_Pascal's_Recurrence(h1:1 ≤ n)(h2:1 ≤ k) : choose n k = choose (n-1) k  + choose (n-1) (k-1) := by
 --   have choose_eq_choose_sub_add :  choose n k = choose (n - 1 + 1) (k - 1 + 1)  := by
@@ -78,16 +141,38 @@ set_option maxHeartbeats 999999999999999999999999
 --   rw[add_comm]
 --   simp
 
-example (a b c : Nat) : a + b + c = a + c + b := by
-  rw [Nat.add_assoc]
-  rw [Nat.add_assoc]
-  rw [Nat.add_comm]
-  rw [Nat.add_assoc]
-  rw [Nat.add_comm b c]
-  rw [Nat.add_comm a (c+b)]
+-- example (a b c : Nat) : a + b + c = a + c + b := by
+--   rw [Nat.add_assoc]
+--   rw [Nat.add_assoc]
+--   rw [Nat.add_comm]
+--   rw [Nat.add_assoc]
+--   rw [Nat.add_comm b c]
+--   rw [Nat.add_comm a (c+b)]
 
 
-example(a b c:Nat):b + (c + a) = a + (c + b):=by
-  rw [← Nat.add_assoc]
-  rw [Nat.add_comm b c]
-  rw [Nat.add_comm a (c+b)]
+-- example(a b c:Nat):b + (c + a) = a + (c + b):=by
+--   rw [← Nat.add_assoc]
+--   rw [Nat.add_comm b c]
+--   rw [Nat.add_comm a (c+b)]
+
+
+theorem mathd_algebra_493
+  (f : ℝ → ℝ)
+  (h₀ : ∀ x, f x = x^2 - 4 * Real.sqrt x + 1) :
+  f (f 4) = 70 := by
+  rw [h₀]
+  rw [← sub_eq_zero]
+  rw [← sub_eq_zero, ← sub_eq_zero]
+  rw [← sub_eq_zero]
+  sorry
+
+theorem mathd_algebra_493'
+  (f : ℝ → ℝ)
+  (h₀ : ∀ x, f x = x^2 - 4 * Real.sqrt x + 1) :
+  f 4 ^ 2 - 4 * Real.sqrt (f 4) + 1 - 70 - 0 - 0 - 0 = 0 := by
+  rw [sub_eq_zero]
+  rw [sub_eq_zero]
+  rw [sub_eq_zero]
+  rw [sub_eq_zero]
+  rw[← h₀]
+  rw[mathd_algebra_493 f h₀]

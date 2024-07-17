@@ -38,10 +38,10 @@ args = {
     'numItersForTrainExamplesHistory': 20,
     'epochs': 10,                                    # Number of epochs of training per iteration
     'checkpoint_path': 'latest.pth',                 # location to save latest set of weights
-    'TACRIC_NUMBER': 8,
+    'TACRIC_NUMBER': 16,
     'feature_size':100,
-    'max_count': 100
-    # 'MAX_ROUND_NUMBER' : 10
+    'max_count': 100,
+    'time_out' : 120
 }
 
 
@@ -49,7 +49,6 @@ state_list = []
 lean_list = []
 
 feature_size = args['feature_size']  # 特征向量的size
-time_out = 180
 
 
 device_ids = list(range(torch.cuda.device_count()))  
@@ -75,25 +74,25 @@ def list_files(directory):
 count = 0
 new_theorems = []
 
-file_list = []
-with open('example_generate.txt', 'r') as file: 
-    lines = file.readlines() 
-    for line in lines:
-        line = ''.join(line).strip('\n')
-        file_list.append(line)
-        print(line)
+# file_list = []
+# with open('example_generate.txt', 'r') as file: 
+#     lines = file.readlines() 
+#     for line in lines:
+#         line = ''.join(line).strip('\n')
+#         file_list.append(line)
+#         print(line)
 
 # #待证明策略：
-# lean_dir = "/home2/wanglei/Project/testfolder/succ"
-# # lean_dir = "/home2/wanglei/Project/testfolder"
-# file_list = list_files(lean_dir)
-# # print(len(file_list))
+lean_dir = "/home2/wanglei/Project/testfolder/mathlib_theorems"
+# lean_dir = "/home2/wanglei/Project/testfolder"
+file_list = list_files(lean_dir)
+# print(len(file_list))
 
 lean_workdir = "/home2/wanglei/Project" # Lean工程的根目录
 
 for i, file in enumerate(file_list):
     print("============================================")
-    lean_file = "testfolder/lean_theorems_with_options_valid/" + file  # 待证明定理的Lean文件
+    lean_file = "testfolder/mathlib_theorems/" + file  # 待证明定理的Lean文件
    
     print("证明定理为:{}".format(file))
     lean = Lean4Gym(lean_workdir, lean_file)
@@ -107,7 +106,7 @@ for i, file in enumerate(file_list):
 
     print("开始搜索策略")
     mcts = MCTS(node, policyModel, valueModel, args, device)
-    outputs = mcts.runmcts(lean, time_out)
+    outputs = mcts.runmcts(lean)
     new_theorems.extend(outputs)
         
     print("第{}个定理".format(str(i)))

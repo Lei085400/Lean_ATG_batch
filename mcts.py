@@ -139,12 +139,37 @@ def tactic_generator(state):
 
   state = state.getTacticState()
   tactic_candidates, scores = generate_vllm(_prompt_proofstep(state), model, tokenizer, 
-                              temperatures=[0], num_samples=8, stop=tokenizer.eos_token)
+                              temperatures=[0], num_samples=16, stop=tokenizer.eos_token)
       
   return tactic_candidates
 
 def generate_theorem(node):
-  return node.state.tacticState
+  new_steps = []
+  path = []
+  state_list = []
+  
+  state = node.state.tacticState
+
+  while node.tac is not None:
+    path.append(node.tac)  # 生成每步状态的策略
+    # state_list.append(node.state.state) # 每步的状态
+    node = node.parent
+    
+  path.reverse()
+  print(path)
+  
+  # state_list.append(node.state.tacticState)
+  # state_list.reverse()
+
+  # print("成功路径策略：")
+  # for tactic in path:
+  #   print(tactic)
+
+  # print("成功路径状态：")
+  # for state in state_list:
+  #   print(state.tacticState)
+    
+  return new_steps
  
 #判断是否为新定理
 def new_theorem(node, outputs):
@@ -416,7 +441,7 @@ class MCTS:
     def run(self, lean):
       node =  self.node
       computation_budget = 1000
-      time_out = 120
+      time_out = self.args['time_out']
       outputs = []
       start = time.time()
       # Run as much as possible under the computation budget
@@ -455,12 +480,13 @@ class MCTS:
       return node
 
 
-    def runmcts(self, lean, time_out):
+    def runmcts(self, lean):
       count = 0
       node =  self.node
       computation_budget = 1000000
       start = time.time()
       outputs = []
+      time_out = self.args['time_out']
       
       # Run as much as possible under the computation budget
       for i in trange(computation_budget):
@@ -488,7 +514,7 @@ class MCTS:
 
         if(expand_node.new): #生成了新定理, 填补证明步骤
           
-          new_theorems = generate_theorem(expand_node)
+          new_steps = generate_theorem(expand_node)
           # print('new_theorem:',new_theorem)
           
           new_theorems = expand_node.state.tacticState
@@ -496,7 +522,12 @@ class MCTS:
 
           with open('out.json', 'a') as file:
             json.dump(new_theorems, file)
-            file.write('\n')                      
+            file.write('\n')
+            
+          with open('out_step.json', 'a') as file:
+            json.dump(new_steps, file)
+            file.write('\n')
+                              
           count += 1
           
           if(count>=self.args['max_count']):
