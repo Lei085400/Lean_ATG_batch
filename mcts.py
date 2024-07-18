@@ -149,14 +149,8 @@ def generate_theorem(node):
   state_list = []
   
   state = node.state.tacticState
-
-  while node.tac is not None:
-    path.append(node.tac)  # 生成每步状态的策略
-    # state_list.append(node.state.state) # 每步的状态
-    node = node.parent
-    
+  path = copy.copy(node.path)
   path.reverse()
-  print(path)
   
   # state_list.append(node.state.tacticState)
   # state_list.reverse()
@@ -203,6 +197,7 @@ class Node(object):
     self.depth = 0 
     self.similarity = 0
     self.llmflag = True #代表llm能产生有用的策略
+    self.path = []
 
   def set_state(self, state):
     self.state = state
@@ -496,6 +491,14 @@ class MCTS:
         # 1. Find the best node to expand
         # print("mcts到第{}次，node为：{}".format(i,node.state))
         expand_node = self.tree_policy(node, lean, True, outputs)
+        expand_node.path = copy.copy(expand_node.parent.path)
+        expand_node.path.append(expand_node.tac)
+        # print("++++++++++++++++")
+        # print(expand_node.path)
+        # print(expand_node.parent.path)
+        # print(expand_node.tac)
+        # print("++++++++++++++++")
+        
         if(expand_node.llmflag == False):
           return outputs
         ############################################
@@ -508,6 +511,8 @@ class MCTS:
           input_value = torch.FloatTensor(np.array(encodestate).astype(np.float64)).to(self.device)
           reward = float(self.value_model(input_value))
         
+        if(expand_node.state.isFinish()):
+          break
 
         # 3. Update all passing nodes with reward
         self.backup(expand_node, reward)
@@ -525,7 +530,7 @@ class MCTS:
             file.write('\n')
             
           with open('out_step.json', 'a') as file:
-            json.dump(new_steps, file)
+            json.dump(expand_node.path, file)
             file.write('\n')
                               
           count += 1

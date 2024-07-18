@@ -12,8 +12,16 @@ a✝ b✝ c✝ a b c : G
 ⊢ a * b * c⁻¹ = a * (b / c)
 G : Type u_1
 inst✝ : DivInvMonoid G
+a✝ b✝ c✝ a b c : G
+⊢ a * b / c = a * (b / c)
+G : Type u_1
+inst✝ : DivInvMonoid G
 a b c x : G
 ⊢ x⁻¹ = 1 * x⁻¹
+G : Type u_1
+inst✝ : Group G
+a✝ b✝ c a b : G
+⊢ 1 * b = b
 G : Type u_1
 inst✝ : DivInvMonoid G
 a b c : G
@@ -32,6 +40,14 @@ a b c : G
 ⊢ b / a = c / a ↔ b = c
 G : Type u_1
 inst✝ : DivInvMonoid G
+a✝ b✝ c a b : G
+⊢ a * (b * b⁻¹) = a
+G : Type u_1
+inst✝ : DivInvMonoid G
+a✝ b✝ c a b : G
+⊢ a * b * b⁻¹ = a
+G : Type u_1
+inst✝ : DivInvMonoid G
 a b c x y : G
 ⊢ x * (1 * y⁻¹) = x * y⁻¹
 G : Type u_1
@@ -42,6 +58,30 @@ G : Type u_1
 inst✝ : DivInvMonoid G
 a b c x y : G
 ⊢ x * y⁻¹ = x / y
+G : Type u_1
+inst✝ : DivInvMonoid G
+a b c x y : G
+⊢ x * (1 / y) = x / y
+G : Type u_1
+inst✝ : Group G
+a b c : G
+h : a * b = 1
+⊢ b⁻¹ = a * b * b⁻¹
+G : Type u_1
+inst✝ : Group G
+a b c : G
+h : a * b = 1
+⊢ b⁻¹ = 1 * b⁻¹
+G : Type u_1
+inst✝ : Group G
+a b c : G
+h : a * b = 1
+⊢ b⁻¹ = a
+G : Type u_1
+inst✝ : Group G
+a b c : G
+h : a * b = 1
+⊢ b⁻¹ = a * (b * b⁻¹)
 G : Type u_1
 inst✝ : DivInvMonoid G
 a✝ b✝ c✝ a b c : G
@@ -62,3 +102,19 @@ G : Type u_1
 inst✝ : DivInvMonoid G
 a✝ b✝ c✝ a b c : G
 ⊢ a * (b⁻¹ * (b / c)) = a / c
+G : Type u_1
+inst✝ : DivInvMonoid G
+a✝ b✝ c✝ a b c : G
+⊢ a / b * (b * c⁻¹) = a / c
+G : Type u_1
+inst✝ : Group G
+a✝ b✝ c a b : G
+⊢ a * 1 = a
+G : Type u_1
+inst✝ : Group G
+a✝ b✝ c a b : G
+⊢ 1 * b = b
+G : Type u_1
+inst✝ : Group G
+a✝ b✝ c a b : G
+⊢ a * 1 = a

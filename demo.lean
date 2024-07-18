@@ -8,6 +8,8 @@ import Mathlib.Algebra.Associated
 import Mathlib.Algebra.BigOperators.Basic
 import Mathlib.Algebra.BigOperators.Order
 import Mathlib.Algebra.BigOperators.Pi
+import Mathlib.Algebra.BigOperators.Ring
+import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.GeomSum
 import Mathlib.Algebra.Group.Basic
 import Mathlib.Algebra.Group.Commute.Basic
@@ -61,6 +63,7 @@ import Mathlib.Logic.Equiv.Basic
 import Mathlib.Order.Filter.Basic
 import Mathlib.Order.LocallyFinite
 import Mathlib.Order.WellFounded
+import Mathlib.Tactic.Linarith
 import Mathlib.Topology.Basic
 import Mathlib.Topology.Instances.NNReal
 import Aesop

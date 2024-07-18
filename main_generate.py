@@ -40,7 +40,7 @@ args = {
     'checkpoint_path': 'latest.pth',                 # location to save latest set of weights
     'TACRIC_NUMBER': 16,
     'feature_size':100,
-    'max_count': 100,
+    'max_count': 200,
     'time_out' : 120
 }
 
@@ -83,7 +83,7 @@ new_theorems = []
 #         print(line)
 
 # #待证明策略：
-lean_dir = "/home2/wanglei/Project/testfolder/mathlib_theorems"
+lean_dir = "/home2/wanglei/Project/testfolder/mini_Theorem_rl"
 # lean_dir = "/home2/wanglei/Project/testfolder"
 file_list = list_files(lean_dir)
 # print(len(file_list))
@@ -92,7 +92,7 @@ lean_workdir = "/home2/wanglei/Project" # Lean工程的根目录
 
 for i, file in enumerate(file_list):
     print("============================================")
-    lean_file = "testfolder/mathlib_theorems/" + file  # 待证明定理的Lean文件
+    lean_file = "testfolder/mini_Theorem_rl/" + file  # 待证明定理的Lean文件
    
     print("证明定理为:{}".format(file))
     lean = Lean4Gym(lean_workdir, lean_file)
