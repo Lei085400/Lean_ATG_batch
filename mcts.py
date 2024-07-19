@@ -164,15 +164,31 @@ def generate_theorem(node):
   #   print(state.tacticState)
     
   return new_steps
- 
+
+
+def all_elements_contain_have(strings):
+    # Iterate through each string in the list
+    for string in strings:
+        # Check if 'have' is in the string
+        if 'have' not in string:
+            return False
+    # If all strings contain 'have', return True
+    return True
+  
+
 #判断是否为新定理
 def new_theorem(node, outputs):
   state = node.state.tacticState
   if(state == "no goals"):
     return False
+  
+  if(all_elements_contain_have(node.path)):
+    return False
+  
   for i in outputs:
     if i == state:
-      return False     
+      return False
+       
   return True
 
 class Node(object):
@@ -374,6 +390,8 @@ class MCTS:
       new_node.prob = float(self.policy_model(input_policy))  # 返回的应该不是值，而是数组？
       #########################
       node.add_child(new_node)
+      new_node.path = copy.copy(new_node.parent.path)
+      new_node.path.append(new_node.tac)
       if(new_node.flag == False):
         new_node.new = False
       else:
@@ -491,8 +509,7 @@ class MCTS:
         # 1. Find the best node to expand
         # print("mcts到第{}次，node为：{}".format(i,node.state))
         expand_node = self.tree_policy(node, lean, True, outputs)
-        expand_node.path = copy.copy(expand_node.parent.path)
-        expand_node.path.append(expand_node.tac)
+        
         # print("++++++++++++++++")
         # print(expand_node.path)
         # print(expand_node.parent.path)
@@ -524,14 +541,18 @@ class MCTS:
           
           new_theorems = expand_node.state.tacticState
           outputs.append(new_theorems)
-
+          with open('out_step.txt', 'a') as file:
+            json.dump(expand_node.path, file)
+            file.write('\n')
+            json.dump(new_theorems, file)
+            file.write('\n')
+            file.write('\n')
+                      
           with open('out.json', 'a') as file:
             json.dump(new_theorems, file)
             file.write('\n')
             
-          with open('out_step.json', 'a') as file:
-            json.dump(expand_node.path, file)
-            file.write('\n')
+          
                               
           count += 1
           

@@ -57,10 +57,10 @@ valueModel = value_model(feature_size, device).to(device)
 print("hello,开始了！！")
 
 
-checkpoint_policy = torch.load("policy_model")
+checkpoint_policy = torch.load("/home2/wanglei/Project/ATG/policy_model")
 policyModel.load_state_dict(checkpoint_policy['state_dict'])
 
-checkpoint_value = torch.load("value_model")
+checkpoint_value = torch.load("/home2/wanglei/Project/ATG/value_model")
 valueModel.load_state_dict(checkpoint_value['state_dict'])
 
 def list_files(directory):
