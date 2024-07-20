@@ -166,14 +166,14 @@ def generate_theorem(node):
   return new_steps
 
 
-def all_elements_contain_have(strings):
-    # Iterate through each string in the list
-    for string in strings:
-        # Check if 'have' is in the string
-        if 'have' not in string:
-            return False
-    # If all strings contain 'have', return True
-    return True
+# def all_elements_contain_have(strings):
+#     # Iterate through each string in the list
+#     for string in strings:
+#         # Check if 'have' is in the string
+#         if 'have' not in string:
+#             return False
+#     # If all strings contain 'have', return True
+#     return True
   
 
 #判断是否为新定理
@@ -182,7 +182,7 @@ def new_theorem(node, outputs):
   if(state == "no goals"):
     return False
   
-  if(all_elements_contain_have(node.path)):
+  if 'have' in node.tac:
     return False
   
   for i in outputs:
