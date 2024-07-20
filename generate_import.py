@@ -22,7 +22,7 @@ def generate_import_statements(folder_path, output_file):
 
 # 指定文件夹路径和输出文件名
 folder_path = '../AdaLean'  # 替换为实际文件夹路径
-output_file = 'imports.txt'
+output_file = 'imports.lean'
 
 # 生成import语句并写入文件
 generate_import_statements(folder_path, output_file)
