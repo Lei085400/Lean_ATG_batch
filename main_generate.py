@@ -21,6 +21,7 @@ from trainer import Trainer
 from mcts import Node
 from mcts import MCTS
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM
+from generate import assumption_theorem
 
 # import ssl
 # ssl._create_default_https_context = ssl._create_unverified_context
@@ -83,7 +84,7 @@ new_theorems = []
 #         print(line)
 
 # #待证明策略：
-lean_dir = "/home2/wanglei/Project/testfolder/mini_Theorem_rl"
+lean_dir = "/home2/wanglei/Project/testfolder/root"
 # lean_dir = "/home2/wanglei/Project/testfolder"
 file_list = list_files(lean_dir)
 # print(len(file_list))
@@ -92,21 +93,29 @@ lean_workdir = "/home2/wanglei/Project" # Lean工程的根目录
 
 for i, file in enumerate(file_list):
     print("============================================")
-    lean_file = "testfolder/mini_Theorem_rl/" + file  # 待证明定理的Lean文件
+    lean_file = "testfolder/root/" + file  # 待证明定理的Lean文件
    
     print("证明定理为:{}".format(file))
     lean = Lean4Gym(lean_workdir, lean_file)
     try:
         state = lean.getInitState()
+        # print(state.tacticState)
     except:
         print("状态异常")
         continue
     
     node = Node(state)
+    root_name = os.path.splitext(file)[0]
+    assumptions, theorem = assumption_theorem(state.tacticState)
+    print("根节点名称、前提和结论")
+    print(root_name)
+    print(assumptions)
+    print(theorem)
+    print("=============")
 
     print("开始搜索策略")
     mcts = MCTS(node, policyModel, valueModel, args, device)
-    outputs = mcts.runmcts(lean)
+    outputs = mcts.runmcts(lean, root_name, assumptions, theorem)
     new_theorems.extend(outputs)
         
     print("第{}个定理".format(str(i)))

@@ -143,6 +143,10 @@ def tactic_generator(state):
       
   return tactic_candidates
 
+def all_rw(node):
+  path = copy.copy(node.path)
+  return all(elem.startswith("rw") for elem in path)
+
 def generate_theorem(node):
   new_steps = []
   path = []
@@ -183,6 +187,12 @@ def new_theorem(node, outputs):
     return False
   
   if 'have' in node.tac:
+    return False
+  if 'cases' in node.tac:
+    return False
+  if 'cases' in state:
+    return False
+  if 'case' in state:
     return False
   
   for i in outputs:
@@ -541,7 +551,8 @@ class MCTS:
           
           new_theorems = expand_node.state.tacticState
           outputs.append(new_theorems)
-          with open('out_step.txt', 'a') as file:
+          with open('out_step.lean', 'a') as file:
+            
             json.dump(expand_node.path, file)
             file.write('\n')
             json.dump(new_theorems, file)
@@ -551,9 +562,12 @@ class MCTS:
           with open('out.json', 'a') as file:
             json.dump(new_theorems, file)
             file.write('\n')
-            
           
-                              
+          if(all_rw(expand_node)):
+            print(new_theorems)
+            print(expand_node.path)
+            print("===========================")
+            
           count += 1
           
           if(count>=self.args['max_count']):
