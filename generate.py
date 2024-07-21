@@ -1,3 +1,24 @@
+import re
+
+
+def extract_theorem_info(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
+
+    # 定理名称和前提匹配正则表达式
+    theorem_pattern = re.compile(r'theorem\s+([^\s\(\{\[]+)\s*([\(\{\[].*[\)\}\]])\s*:', re.DOTALL)
+
+    theorem_match = theorem_pattern.search(content)
+    if theorem_match:
+        theorem_name = theorem_match.group(1)
+        premises = theorem_match.group(2)
+    else:
+        theorem_name = "No theorem name found"
+        premises = ""
+
+    return premises
+
+
 def convert_to_lean_theorem(theorem_str, index):
     # 将字符串按行分割
     lines = theorem_str.split('\n')
@@ -47,15 +68,53 @@ def assumption_theorem(theorem_str): #给定定理状态，划分前提和定理
 
     # 提取前提条件和定理
     assumptions = lines[:proof_index]
-    assumptions = [condition.replace('✝', '') for condition in assumptions]
+    # assumptions = [condition.replace('✝', '') for condition in assumptions]
     theorem = lines[proof_index].split('⊢')[1].strip()
     
-    print(assumptions)
-    print(theorem)
+    # print(assumptions)
+    # print(theorem)
     
     return assumptions, theorem
 
-import_statements = """import AdaLean.sum_neg_cancel
+
+def reverse_rw_strategy(strategy):
+    # 逆转单个策略
+    if strategy.startswith("←"):
+        return strategy[1:]  # 去掉箭头
+    else:
+        return "←" + strategy  # 添加箭头
+
+def process_rw_element(element):
+    # 找到"rw["和"]"之间的部分
+    start_idx = element.find("[")
+    end_idx = element.find("]")
+    
+    if start_idx == -1 or end_idx == -1:
+        raise ValueError("Invalid rw element format")
+    
+    # 提取并处理策略部分
+    strategies = element[start_idx+1:end_idx].split(", ")
+    reversed_strategies = [reverse_rw_strategy(strategy) for strategy in strategies]
+    reversed_strategies.reverse()  # 逆序处理策略
+    
+    # 重新组装rw元素
+    processed_element = element[:start_idx+1] + ", ".join(reversed_strategies) + element[end_idx:]
+    return processed_element
+
+def process_rw_list(lst):
+    # 检查所有元素是否都以"rw"开头
+    if not all(elem.startswith("rw") for elem in lst):
+        raise ValueError("Not all elements start with 'rw'")
+    
+    # 处理每个rw元素并逆序列表
+    processed_list = [process_rw_element(elem) for elem in lst]
+    processed_list.reverse()  # 逆序处理整个列表
+    
+    return processed_list
+
+
+IMPORTS = """
+import AdaLean.sum_neg_cancel
 import AdaLean.sum_eq_two
 import AdaLean.two_mod_two_pow
 import AdaLean.two_pow_eq_two_pow_sub_add
@@ -223,9 +282,9 @@ import Aesop
 set_option trace.aesop true
 set_option trace.aesop.proof true
 set_option maxHeartbeats 999999999999999999999999
-open Nat Real Rat BigOperators
+open Nat Real Rat BigOperators Function
 
-open Nat
+variable [CommGroup G] {{a b c d : G }}
 """
 
 # # 示例字符串

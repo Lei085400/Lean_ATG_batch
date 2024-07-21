@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Paper from http://pubs.doc.ic.ac.uk/survey-mcts-methods/survey-mcts-methods.pdf .
 import os
+import re
 import sys
 import math
 import random
@@ -33,6 +34,8 @@ from pathlib import Path
 from Lean4Gym import *
 # from lean_dojo import *
 import traceback
+from generate import process_rw_list
+from generate import IMPORTS
 # TACRIC_NUMBER = 8
 MAX_ROUND_NUMBER = 10
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0" 
@@ -134,12 +137,30 @@ def cosine_similarity(vector1, vector2):
     
     return cosine_sim
 
+def plan1(path, root_name, assumptions, theorem): #新定理证明步骤列表
+  processed_list = process_rw_list(path)
+  new = 'rw[' + root_name + ']'
+  processed_list.append(new)
+  return processed_list
+  
 
-def tactic_generator(state):
+def plan2(path, root_name, assumptions, theorem): #新定理证明步骤列表, 逆转+goal
+  processed_list = process_rw_list(path)
+  new = 'rw[goal]'
+  processed_list.append(new)
+  return processed_list  
+
+def plan3(path, root_name, assumptions, theorem): #新定理证明步骤列表,  at goal
+  processed_list = [f"{s} at goal" for s in path]
+  new = 'rw[goal]'
+  processed_list.append(new)
+  return processed_list  
+
+def tactic_generator(state, num):
 
   state = state.getTacticState()
   tactic_candidates, scores = generate_vllm(_prompt_proofstep(state), model, tokenizer, 
-                              temperatures=[0], num_samples=16, stop=tokenizer.eos_token)
+                              temperatures=[0], num_samples=num, stop=tokenizer.eos_token)
       
   return tactic_candidates
 
@@ -147,27 +168,26 @@ def all_rw(node):
   path = copy.copy(node.path)
   return all(elem.startswith("rw") for elem in path)
 
-def generate_theorem(node):
+def generate_theorem(node, root_name, assumptions, theorem, count):
   new_steps = []
   path = []
   state_list = []
   
   state = node.state.tacticState
-  path = copy.copy(node.path)
-  path.reverse()
+  match = re.search(r'⊢(.*)', state, re.DOTALL)
+  if match:
+      state_now = match.group(1).strip()
   
-  # state_list.append(node.state.tacticState)
-  # state_list.reverse()
+  path = copy.copy(node.path)
+  
+  step = plan3(path, root_name, assumptions, theorem)
+  
+  theorem_all = "theorem "+ root_name + str(count) + assumptions + "(goal:" + theorem + ")" +":" + state_now + " := by" 
+  
+  for item in step:
+    theorem_all += '\n' + item
 
-  # print("成功路径策略：")
-  # for tactic in path:
-  #   print(tactic)
-
-  # print("成功路径状态：")
-  # for state in state_list:
-  #   print(state.tacticState)
-    
-  return new_steps
+  return theorem_all
 
 
 # def all_elements_contain_have(strings):
@@ -289,7 +309,7 @@ class Node(object):
       return state
     return result
 
-  def get_next_state_with_random_choice(self, lean, index):  ############# 根据当前state输入大模型，获取策略list后，随机选择其中一个策略，返回执行该随机策略后的状态
+  def get_next_state_with_random_choice(self, lean, index, num):  ############# 根据当前state输入大模型，获取策略list后，随机选择其中一个策略，返回执行该随机策略后的状态
     # if(self.state==[]):
     #     self.tactic_candidates = tactic_generator()
     # else:
@@ -300,7 +320,7 @@ class Node(object):
     # random_choice = random.choices([choice for choice in tactic_candidates],k=1)
     
     if(self.tactic_candidates is None):
-      self.tactic_candidates = tactic_generator(self.state)
+      self.tactic_candidates = tactic_generator(self.state, num)
     tactic_candidates = self.tactic_candidates
     
     try:
@@ -390,7 +410,7 @@ class MCTS:
       # while new_state.state.tacticState in tried_sub_node_states and new_state.tac in tried_sub_node_tacs:  # 判断新状态是否已经被expand，若已经被expand，则重新对node随机采取action，获得新状态
       #   new_state = node.get_next_state_with_random_choice(lean)   # 根据当前node状态随机采取action，获得执行后的新状态
       
-      new_node = node.get_next_state_with_random_choice(lean, len(node.children))   # 根据当前node状态随机采取action，获得执行后的新状态
+      new_node = node.get_next_state_with_random_choice(lean, len(node.children),self.args["TACRIC_NUMBER"])   # 根据当前node状态随机采取action，获得执行后的新状态
       new_node.depth = node.depth + 1
       #########################
       encodestate = encode_state(node.state.getTacticState(), self.args['feature_size'])
@@ -503,7 +523,7 @@ class MCTS:
       return node
 
 
-    def runmcts(self, lean):
+    def runmcts(self, lean, root_name, assumptions, theorem, outfile):
       count = 0
       node =  self.node
       computation_budget = 1000000
@@ -546,29 +566,34 @@ class MCTS:
 
         if(expand_node.new): #生成了新定理, 填补证明步骤
           
-          new_steps = generate_theorem(expand_node)
-          # print('new_theorem:',new_theorem)
+          new_steps = generate_theorem(expand_node, root_name, assumptions, theorem, i)
+          # print('new_steps:',new_steps)
+          
+          F = open(outfile,'a')
+          F.write('\n\n' + new_steps + '\n\n')
+          F.close() 
           
           new_theorems = expand_node.state.tacticState
           outputs.append(new_theorems)
-          with open('out_step.lean', 'a') as file:
-            
-            json.dump(expand_node.path, file)
-            file.write('\n')
-            json.dump(new_theorems, file)
-            file.write('\n')
-            file.write('\n')
-                      
-          with open('out.json', 'a') as file:
-            json.dump(new_theorems, file)
-            file.write('\n')
           
-          if(all_rw(expand_node)):
-            print(new_theorems)
-            print(expand_node.path)
-            print("===========================")
+          # with open('out_step.lean', 'a') as file:
             
-          count += 1
+          #   json.dump(expand_node.path, file)
+          #   file.write('\n')
+          #   json.dump(new_theorems, file)
+          #   file.write('\n')
+          #   file.write('\n')
+                      
+          # with open('out.json', 'a') as file:
+          #   json.dump(new_theorems, file)
+          #   file.write('\n')
+          
+          # if(all_rw(expand_node)):
+          #   print(new_theorems)
+          #   print(expand_node.path)
+          #   print("++++++++++++++")
+            
+          
           
           if(count>=self.args['max_count']):
             break

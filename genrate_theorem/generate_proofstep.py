@@ -34,7 +34,7 @@ def process_rw_list(lst):
     return processed_list
 
 # 示例列表
-example_list = ["rw[Nat.pow_mul]"]
+example_list = ['rw [mul_comm, div_eq_mul_inv]', 'rw [mul_comm, eq_comm]']
 
 # 处理列表并输出结果
 processed_list = process_rw_list(example_list)
