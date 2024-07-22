@@ -21,8 +21,6 @@ import heapq
 import transformers
 import subprocess
 import time
-from datetime import datetime
-from tqdm import tqdm, trange
 from pathlib import Path
 # from lean_dojo import *
 import traceback
@@ -36,7 +34,6 @@ from Lean4Gym import *
 import traceback
 from generate import process_rw_list
 from generate import IMPORTS
-# TACRIC_NUMBER = 8
 MAX_ROUND_NUMBER = 10
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0" 
 
@@ -151,10 +148,18 @@ def plan2(path, root_name, assumptions, theorem): #新定理证明步骤列表, 
   return processed_list  
 
 def plan3(path, root_name, assumptions, theorem): #新定理证明步骤列表,  at goal
-  processed_list = [f"{s} at goal" for s in path]
+  processed_list = []
+  for s in path:
+    if 'have' in s:
+      processed_list.append(s)
+    elif 'this' in s:
+      processed_list.append(s)
+    else:
+      processed_list.append(s + " at goal")
   new = 'rw[goal]'
   processed_list.append(new)
   return processed_list  
+
 
 def tactic_generator(state, num):
 
@@ -164,9 +169,11 @@ def tactic_generator(state, num):
       
   return tactic_candidates
 
+
 def all_rw(node):
   path = copy.copy(node.path)
   return all(elem.startswith("rw") for elem in path)
+
 
 def generate_theorem(node, root_name, assumptions, theorem, count):
   new_steps = []
@@ -180,10 +187,16 @@ def generate_theorem(node, root_name, assumptions, theorem, count):
   
   path = copy.copy(node.path)
   
-  step = plan3(path, root_name, assumptions, theorem)
-  
-  theorem_all = "theorem "+ root_name + str(count) + assumptions + "(goal:" + theorem + ")" +":" + state_now + " := by" 
-  
+  if(assumptions=="" and all_rw(node)):
+    step = plan1(path, root_name, assumptions, theorem)
+    theorem_all = "theorem "+ root_name + str(count) + assumptions +":" + state_now + " := by" 
+  # elif(all_rw(node)):
+  #   step = plan2(path, root_name, assumptions, theorem)
+    # theorem_all = "theorem "+ root_name + str(count) + assumptions + "(goal:" + theorem + ")" +":" + state_now + " := by" 
+  else:
+    step = plan3(path, root_name, assumptions, theorem)
+    theorem_all = "theorem "+ root_name + str(count) + assumptions + "(goal:" + theorem + ")" +":" + state_now + " := by" 
+    
   for item in step:
     theorem_all += '\n' + item
 
@@ -213,6 +226,10 @@ def new_theorem(node, outputs):
   if 'cases' in state:
     return False
   if 'case' in state:
+    return False
+  if '?' in state:
+    return False
+  if 'refine\'' in node.tac:
     return False
   
   for i in outputs:
@@ -570,7 +587,7 @@ class MCTS:
           # print('new_steps:',new_steps)
           
           F = open(outfile,'a')
-          F.write('\n\n' + new_steps + '\n\n')
+          F.write('\n\n' + new_steps + '\n')
           F.close() 
           
           new_theorems = expand_node.state.tacticState

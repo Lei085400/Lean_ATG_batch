@@ -21,8 +21,8 @@ from trainer import Trainer
 from mcts import Node
 from mcts import MCTS
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM
-from generate import assumption_theorem
-from generate import extract_theorem_info
+from generate import extract_theorem_expression
+from generate import extract_premises
 from generate import IMPORTS
 
 # import ssl
@@ -77,32 +77,32 @@ def list_files(directory):
 count = 0
 new_theorems = []
 
-# file_list = []
-# with open('example_generate.txt', 'r') as file: 
-#     lines = file.readlines() 
-#     for line in lines:
-#         line = ''.join(line).strip('\n')
-#         file_list.append(line)
-#         print(line)
+file_list = []
+with open('example_generate.txt', 'r') as file: 
+    lines = file.readlines() 
+    for line in lines:
+        line = ''.join(line).strip('\n')
+        file_list.append(line)
+        print(line)
 
 # #待证明策略：
-lean_dir = "/home2/wanglei/Project/testfolder/root/CommGroup_basic"
-# lean_dir = "/home2/wanglei/Project/testfolder"
-file_list = list_files(lean_dir)
-# print(len(file_list))
-
+lean_dir = "/home2/wanglei/Project/testfolder/root/adalean"
 lean_workdir = "/home2/wanglei/Project" # Lean工程的根目录
-root_folder = "CommGroup_basic"
-
+root_folder = "adalean"
 outfile = "out.lean"
+defines = ""
+
+
+# file_list = list_files(lean_dir)
+
 F = open(outfile,'a')
-F.write(IMPORTS)
+F.write(IMPORTS + defines)
 F.close() 
 
 for i, file in enumerate(file_list):
     print("============================================")
     lean_file = "testfolder/root/" + root_folder + "/" + file  # 待证明定理的Lean文件
-   
+    print(lean_file)
     print("证明定理为:{}".format(file))
     lean = Lean4Gym(lean_workdir, lean_file)
     try:
@@ -115,9 +115,10 @@ for i, file in enumerate(file_list):
     node = Node(state)
     
     root_name = os.path.splitext(file)[0]
-    ass, theorem = assumption_theorem(state.tacticState)
+    # ass, theorem = assumption_theorem(state.tacticState)
     leanfile = "/home2/wanglei/Project/testfolder/root/" + root_folder + "/" + file
-    assumptions = extract_theorem_info(leanfile)
+    assumptions = extract_premises(leanfile)
+    theorem = extract_theorem_expression(leanfile,assumptions)
     
     # print("根节点名称、前提和结论")
     # print(root_name)
@@ -131,7 +132,8 @@ for i, file in enumerate(file_list):
     new_theorems.extend(outputs)
         
     print("第{}个定理".format(str(i)))
-    print("找到{}条新定理".format(str(len(new_theorems))))
+    print("通过此定理找到{}条新定理".format(str(len(outputs))))
+    print("目前共找到{}条新定理".format(str(len(new_theorems))))
     
 print("新定理总数：{}".format(str(len(new_theorems))))
 

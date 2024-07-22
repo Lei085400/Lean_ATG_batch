@@ -1,22 +1,37 @@
 import re
 
 
-def extract_theorem_info(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
+def extract_premises(lean_file_path):
+    with open(lean_file_path, 'r', encoding='utf-8') as file:
         content = file.read()
+    
+    # 定义正则表达式来匹配theorem到第一个冒号之间的所有连续括号内容
+    pattern = r'theorem\s+\w[\w\']*\s*((?:\s*(?:\([^)]*\)|\[[^\]]*\]|\{[^}]*\}))*)\s*:'
 
-    # 定理名称和前提匹配正则表达式
-    theorem_pattern = re.compile(r'theorem\s+([^\s\(\{\[]+)\s*([\(\{\[].*[\)\}\]])\s*:', re.DOTALL)
-
-    theorem_match = theorem_pattern.search(content)
-    if theorem_match:
-        theorem_name = theorem_match.group(1)
-        premises = theorem_match.group(2)
+    match = re.search(pattern, content)
+    if match:
+        premises = match.group(1).strip()
+        return premises
     else:
-        theorem_name = "No theorem name found"
-        premises = ""
+        return ""
 
-    return premises
+
+
+# def extract_premises_test(content):
+    
+#     # 定义正则表达式来匹配theorem到第一个冒号之间的所有连续括号内容
+#     pattern = r'theorem\s+\w[\w\']*\s*((?:\s*(?:\([^)]*\)|\[[^\]]*\]|\{[^}]*\}))*)\s*:'
+
+#     match = re.search(pattern, content)
+#     if match:
+#         premises = match.group(1).strip()
+#         return premises
+#     else:
+#         return ""
+
+# content = "theorem div_eq_of_eq_mul'0 {a b c : G} (h : a = b * c) : a / b = c := by lean_repl sorry"
+# print("前提为:")
+# print(extract_premises_test(content))
 
 
 def convert_to_lean_theorem(theorem_str, index):
@@ -51,6 +66,34 @@ def convert_to_lean_theorem(theorem_str, index):
     lean_theorem = f"{theorem_name}\n{assumptions_str}:\n{theorem}:= by\nsorry\n"
     
     return lean_theorem
+
+
+
+def extract_theorem_expression(file_path, premise_str):
+    # 读取文件内容
+    with open(file_path, 'r', encoding='utf-8') as file:
+        lean_code = file.read()
+
+    # 使用正则表达式找到定理部分
+    theorem_pattern = re.compile(r'theorem\s+[^\s\(\[\{]+.*', re.DOTALL)
+    match = theorem_pattern.search(lean_code)
+    if match:
+        theorem = match.group(0)
+        
+        # 去掉提供的前提字符串
+        theorem_without_premise = theorem.replace(premise_str, '')
+
+        # 提取第一个冒号到 ":=" 之间的内容
+        expression_pattern = re.compile(r':\s*(.*?)(?=\s*:=)')
+        expression_match = expression_pattern.search(theorem_without_premise)
+        if expression_match:
+            expression = expression_match.group(1).strip()
+            return expression
+
+    return ""
+
+
+
 
 def assumption_theorem(theorem_str): #给定定理状态，划分前提和定理
     # 将字符串按行分割
@@ -113,8 +156,7 @@ def process_rw_list(lst):
     return processed_list
 
 
-IMPORTS = """
-import AdaLean.sum_neg_cancel
+IMPORTS = """import AdaLean.sum_neg_cancel
 import AdaLean.sum_eq_two
 import AdaLean.two_mod_two_pow
 import AdaLean.two_pow_eq_two_pow_sub_add
@@ -282,9 +324,8 @@ import Aesop
 set_option trace.aesop true
 set_option trace.aesop.proof true
 set_option maxHeartbeats 999999999999999999999999
-open Nat Real Rat BigOperators Function
+open Nat Real Rat BigOperators Function Finset
 
-variable [CommGroup G] {{a b c d : G }}
 """
 
 # # 示例字符串
