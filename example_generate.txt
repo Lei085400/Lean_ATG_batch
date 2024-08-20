@@ -1,2 +1,0 @@
-choose_le_sum.lean
-mul_sum_choose.lean
